@@ -288,6 +288,15 @@ class Term(object): #where the "subroutine" is defined
                         p.breakable()
                     p.pretty(item)
 
+    def __mul__(self, other):
+        new_term = deepcopy(self)
+        new_term.factor *= other
+        return new_term
+
+    def __rmul__(self, other):
+        new_term = deepcopy(self)
+        new_term.factor *= other
+        return new_term
 
 class Terms(object):
     def __init__(self, terms):
@@ -364,6 +373,18 @@ class Terms(object):
             if count%2 == 0: s+="\\\\ \n&"
         return s
 
+    def __mul__(self, other):
+        new_terms = []
+        for term in self.terms:
+            new_terms.append(term*other)
+        return Terms(new_terms)
+
+    def __rmul__(self, other):
+        new_terms = []
+        for term in self.terms:
+            new_terms.append(other*term)
+        return Terms(new_terms)
+
 class Kamiltonian(Terms):
 
     Ks = {}
@@ -383,10 +404,10 @@ class Kamiltonian(Terms):
             raise Exception("Base case of recursion not specified")
 
         elif n == 0 and k == 1:
-            cls.Ks[key] = S(1).dot(smp.S(-1))
+            cls.Ks[key] = S(1).dot(smp.S(1))
 
         elif n != 0 and k == 1:
-            term1 = S(n+1).dot(smp.S(-1))
+            term1 = S(n+1).dot(smp.S(1))
             term2 = S(n).bracket(K(0,0))
 
             cls.Ks[key] = term1 + term2
@@ -426,12 +447,12 @@ class Generator(Terms):
         terms = Terms([])
         if n == 0: return Terms([])
         if n == 1:
-            terms += K(0,0)
+            terms += smp.S(-1)*K(0,0)
         if n > 1:
-            terms += S(n-1).bracket(K(0,0))
+            terms += S(n-1).bracket(K(0,0), smp.S(-1))
         for k in range(2, n+1):
             # print(k, n-1)
-            terms += K(n-1,k)
+            terms += smp.S(-1)*K(n-1,k)
         terms = terms.rot().integrate()
 
         terms.simplify()
@@ -459,6 +480,6 @@ Kamiltonian.set_H(Terms([Term(0),Term(1)]))
 # k = K(5,3).terms[-1]
 # k = K(3).terms[2]
 k = S(3).terms[1]
-k = K(5)
+k = S(2)
 print(k)
 print(k.latex())
